@@ -20,6 +20,7 @@ public class Pechatnica {
 
     private List<Employee> employees = new ArrayList<Employee>();
     private List<Edition> editions = new ArrayList<Edition>();
+    private List<Printer> printers = new ArrayList<Printer>();
 
     public Pechatnica() {
 
@@ -28,6 +29,9 @@ public class Pechatnica {
 
         this.employees.add(new Manager(this, "Bobi"));
         this.employees.add(new Operator(this, "Juan"));
+
+        this.printers.add(new Printer("1"));
+        this.printers.add(new Printer("2"));
     }
 
     public BigDecimal getRevenue() {
@@ -71,18 +75,9 @@ public class Pechatnica {
         curEdition.setPriceToManufacture(totalPriceForManufacturingOneEntry);
 
         this.editions.add(curEdition);
+        this.PrintEdition(curEdition);
+
         return curEdition;
-    }
-
-    public BigDecimal PayForPaper(PaperTypes type, Formats format, int quantity) {
-        BigDecimal costForPaper = BigDecimal.ZERO;
-
-        Paper paper = new Paper(type, format, quantity);
-
-        costForPaper = paper.getPricePerOne().multiply(BigDecimal.valueOf(paper.getQuantity()));
-
-        System.out.println(costForPaper);
-        return paper.getPricePerOne();
     }
 
     public void SellCopiesEdition(String title, int quantity) {
@@ -136,6 +131,24 @@ public class Pechatnica {
 
         for (Edition edition : editions) {
             System.out.print(" " + edition.getTitle() + " ");
+        }
+    }
+
+    private BigDecimal PayForPaper(PaperTypes type, Formats format, int quantity) {
+        BigDecimal costForPaper = BigDecimal.ZERO;
+
+        Paper paper = new Paper(type, format, quantity);
+
+        costForPaper = paper.getPricePerOne().multiply(BigDecimal.valueOf(paper.getQuantity()));
+
+        System.out.println(costForPaper);
+        return paper.getPricePerOne();
+    }
+
+    private void PrintEdition(Edition edition) {
+        for (Printer printer : printers) {
+            Thread curThread = new Thread(printer, printer.getId());
+            curThread.start();
         }
     }
 }

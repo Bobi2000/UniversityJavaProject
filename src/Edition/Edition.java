@@ -12,6 +12,8 @@ public class Edition {
     private int pagesPerEntry;
     private BigDecimal pricePerEntry;
 
+    private boolean isPrinted = false;
+
     public Edition(CopyTypes type, String title, int quantity, int pagesPerEntry) {
         this.type = type;
         this.title = title;
@@ -68,6 +70,6 @@ public class Edition {
     @Override
     public String toString() {
         return "Title: " + this.title + " Type: " + this.type.toString() + " Quantity: " + this.quantity + " Pages: "
-                + this.pagesPerEntry + " Price: " + this.pricePerEntry;
+                + this.pagesPerEntry + " Price: " + this.pricePerEntry + " isPrinted " + this.isPrinted;
     }
 }
