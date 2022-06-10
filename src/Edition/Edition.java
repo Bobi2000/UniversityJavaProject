@@ -11,6 +11,7 @@ public class Edition {
     private int quantity;
     private int pagesPerEntry;
     private BigDecimal pricePerEntry;
+    private long printedPages;
 
     private boolean isPrinted = false;
 
@@ -33,8 +34,27 @@ public class Edition {
         return type;
     }
 
-    public int pagesNeededToCreateEdition() {
+    public boolean getIsPrinted() {
+        return this.isPrinted;
+    }
+
+    public long pagesNeededToCreateEdition() {
         return this.quantity * this.pagesPerEntry;
+    }
+
+    public int pagesNeededToCreateEntry() {
+        return this.pagesPerEntry;
+    }
+
+    public synchronized void setPrintedPages(long curPrintedPages, String id) {
+        this.printedPages += curPrintedPages;
+
+        System.out.println("Printer " + id + " finished printing!");
+
+        if (this.pagesNeededToCreateEdition() == this.printedPages) {
+            this.isPrinted = true;
+            System.out.println("Successfully printer the edition!");
+        }
     }
 
     public void setPriceToManufacture(BigDecimal priceToManufacture) {
@@ -70,6 +90,6 @@ public class Edition {
     @Override
     public String toString() {
         return "Title: " + this.title + " Type: " + this.type.toString() + " Quantity: " + this.quantity + " Pages: "
-                + this.pagesPerEntry + " Price: " + this.pricePerEntry + " isPrinted " + this.isPrinted;
+                + this.pagesPerEntry + " Price: " + this.pricePerEntry + " Is printed " + this.isPrinted;
     }
 }

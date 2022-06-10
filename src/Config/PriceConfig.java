@@ -13,6 +13,8 @@ public class PriceConfig {
     public static int QuantityPercentDiscount = 10; //10%
     public static int OverchargePercentForEntries = 50; //50%
 
+    public static int PagesPerMinute = 2500;
+
     public static double StartingPrice = 1;
 
     public static double A1Price = 2.0;

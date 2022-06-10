@@ -1,10 +1,13 @@
 package Pechatnica;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import Config.PriceConfig;
 import Edition.Edition;
 import Edition.Paper;
 import Employees.Employee;
@@ -13,6 +16,8 @@ import Employees.Operator;
 import Enums.CopyTypes;
 import Enums.Formats;
 import Enums.PaperTypes;
+import IO.Input;
+import IO.Output;
 
 public class Pechatnica {
     private BigDecimal revenue;
@@ -22,11 +27,10 @@ public class Pechatnica {
     private List<Edition> editions = new ArrayList<Edition>();
     private List<Printer> printers = new ArrayList<Printer>();
 
-    public Pechatnica() {
-
-        this.revenue = PriceConfig.MonthlyRevenueForPechatnica;
-        this.expense = BigDecimal.ZERO;
-
+    public Pechatnica() throws FileNotFoundException, IOException {
+        this.revenue = Input.GetRevenue();
+        this.expense = Input.GetExpenses();
+        
         this.employees.add(new Manager(this, "Bobi"));
         this.employees.add(new Operator(this, "Juan"));
 
@@ -35,11 +39,11 @@ public class Pechatnica {
     }
 
     public BigDecimal getRevenue() {
-        return revenue;
+        return this.revenue;
     }
 
     public BigDecimal getExpense() {
-        return expense;
+        return this.expense;
     }
 
     public void AddNewEmployee(Employee curEmployee) {
@@ -47,12 +51,18 @@ public class Pechatnica {
     }
 
     public void ShowAllEmployees() {
-        for (Employee employee : employees) {
+        for (Employee employee : this.employees) {
             System.out.println(employee.toString());
         }
     }
 
-    public BigDecimal PaySalaries() {
+    public void ShowInfoAboutPrinters() {
+        for (Printer printer : this.printers) {
+           System.out.println(printer.toString());
+        }
+    }
+
+    public BigDecimal PaySalaries() throws IOException {
         BigDecimal totalSalaries = BigDecimal.ZERO;
 
         for (Employee employee : employees) {
@@ -60,18 +70,20 @@ public class Pechatnica {
         }
 
         this.expense = this.expense.add(totalSalaries);
+        Output.SetExpenses(this.expense);
         return totalSalaries;
     }
 
     public Edition CreateNewEdition(CopyTypes type, String title, int count, int pagesPerEntry, PaperTypes paperType,
-            Formats format) {
+            Formats format) throws IOException {
         Edition curEdition = new Edition(type, title, count, pagesPerEntry);
 
         BigDecimal priceForOnePage = PayForPaper(paperType, format, curEdition.getQuantity() * count);
         BigDecimal totalPriceForManufacturingOneEntry = priceForOnePage.multiply(BigDecimal.valueOf(pagesPerEntry));
 
         this.expense = this.expense.add(totalPriceForManufacturingOneEntry.multiply(BigDecimal.valueOf(count)));
-
+        Output.SetExpenses(this.expense);
+        
         curEdition.setPriceToManufacture(totalPriceForManufacturingOneEntry);
 
         this.editions.add(curEdition);
@@ -80,7 +92,7 @@ public class Pechatnica {
         return curEdition;
     }
 
-    public void SellCopiesEdition(String title, int quantity) {
+    public void SellCopiesEdition(String title, int quantity, Output out) {
 
         Edition curEdition = null;
 
@@ -95,10 +107,31 @@ public class Pechatnica {
             return;
         }
 
+        if(curEdition.getIsPrinted() == false) {
+            System.out.println("Edition is still not printed! Please wait!");
+            return;
+        }
+
         try {
             BigDecimal price = curEdition.SellCoppies(quantity);
             this.revenue = this.revenue.add(price);
+            Output.SetRevenue(this.revenue);
+
+
             System.out.println(price);
+
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+            LocalDateTime now = LocalDateTime.now();
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("Edition: " + title + System.lineSeparator());
+            sb.append("Quantity: " + quantity + System.lineSeparator());
+            sb.append("Single Price: " + curEdition.getPricePerEntry() + System.lineSeparator());
+            sb.append("Total Price: " + price + System.lineSeparator());
+            sb.append("Date: " + dtf.format(now) + System.lineSeparator());
+
+            out.WriteReciept(sb.toString());
 
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -109,13 +142,14 @@ public class Pechatnica {
     public void PrintAllEditions() {
         if (this.editions.size() == 0) {
             System.out.println("There are no editions in this pechatnica.");
-            return;
+            return; 
         }
 
         System.out.println("Listing all editions: ");
 
         for (Edition edition : editions) {
-            System.out.println(edition.getTitle() + " - " + edition.getQuantity());
+            System.out.println("Title: " + edition.getTitle() + " - Quantity " + edition.getQuantity()
+                    + " - Is printed " + edition.getIsPrinted());
         }
     }
 
@@ -146,8 +180,22 @@ public class Pechatnica {
     }
 
     private void PrintEdition(Edition edition) {
-        for (Printer printer : printers) {
-            Thread curThread = new Thread(printer, printer.getId());
+        long pagesPerPrinter = edition.pagesNeededToCreateEdition();
+        long averagePagesPerPrinter = pagesPerPrinter / this.printers.size();
+
+        for(int i = 0; i < this.printers.size(); i++) {
+            Printer curPrinter = this.printers.get(i);
+
+            if(this.printers.size() - 1 == i) {
+                curPrinter.setCurrentlyPrintingPages(pagesPerPrinter);
+            } else {
+                curPrinter.setCurrentlyPrintingPages(averagePagesPerPrinter);
+                pagesPerPrinter -= averagePagesPerPrinter;
+            }
+
+            curPrinter.setEdition(edition);
+            
+            Thread curThread = new Thread(curPrinter, curPrinter.getId());
             curThread.start();
         }
     }

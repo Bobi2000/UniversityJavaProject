@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.Scanner;
 
 import Config.PriceConfig;
@@ -7,13 +8,16 @@ import Employees.Operator;
 import Enums.CopyTypes;
 import Enums.Formats;
 import Enums.PaperTypes;
+import IO.Input;
+import IO.Output;
 import Pechatnica.Pechatnica;
 
 public class App {
     public static void main(String[] args) throws Exception {
         try (Scanner scanner = new Scanner(System.in)) {
             Pechatnica curPechatnica = new Pechatnica();
-
+            Output o = new Output();
+            Input i = new Input();
             ShowCommands();
 
             while (true) {
@@ -37,13 +41,19 @@ public class App {
                 } else if (FormatInput(input[0]).equals("status")) {
                     ListExpenses(curPechatnica);
                 } else if (FormatInput(input[0]).equals("sell")) {
-                    SellEditions(input, curPechatnica);
+                    SellEditions(input, curPechatnica, o);
                 } else if (FormatInput(input[0]).equals("employ-operator")) {
                     EmployOperator(input, curPechatnica);
                 } else if (FormatInput(input[0]).equals("employ-manager")) {
                     EmployManager(input, curPechatnica);
                 } else if (FormatInput(input[0]).equals("list-employees")) {
                     ListEmployees(curPechatnica);
+                } else if (FormatInput(input[0]).equals("list-printers")) {
+                    ListPrinters(curPechatnica);
+                } else if(FormatInput(input[0]).equals("list-receipt")) {
+                    i.ReadAllReciepts();
+                } else if(FormatInput(input[0]).equals("receipt")) {
+                    i.ReadFile(input[1]);
                 } else {
                     System.out.println("There is no such command. Please try again!");
                 }
@@ -71,10 +81,13 @@ public class App {
         System.out.println("");
         System.out.println(padRight("employ-operator [employee name]", whiteSpaces) + ": Employ a new operator.");
         System.out.println(padRight("employ-manager [employee name]", whiteSpaces) + ": Employ a new manager.");
-        System.out.println(padRight("list-employees", whiteSpaces) + ": List all employees.");
         System.out.println(padRight("add", whiteSpaces) + ": Add a new edition.");
         System.out.println(padRight("pay", whiteSpaces) + ": Pay salaries to employees.");
         System.out.println(padRight("list", whiteSpaces) + ": List all edition.");
+        System.out.println(padRight("list-employees", whiteSpaces) + ": List all employees.");
+        System.out.println(padRight("list-printers", whiteSpaces) + ": List all printers.");
+        System.out.println(padRight("list-receipt", whiteSpaces) + ": List all printers.");
+        System.out.println(padRight("receipt [receipt id]", whiteSpaces) + ": List all printers.");
         System.out.println(padRight("status", whiteSpaces) + ": List revenue and expenses.");
         System.out.println(
                 padRight("show [edition name]", whiteSpaces) + ": Shows all the information about an edition.");
@@ -97,7 +110,7 @@ public class App {
         System.out.println("Invalid input!");
     }
 
-    public static void PayEmployees(Pechatnica curPechatnica) {
+    public static void PayEmployees(Pechatnica curPechatnica) throws IOException {
         System.out.println("Total salaries payed: " + curPechatnica.PaySalaries());
     }
 
@@ -106,12 +119,12 @@ public class App {
         System.out.println("Expense : " + curPechatnica.getExpense());
     }
 
-    public static void SellEditions(String[] args, Pechatnica curPechatnica) {
+    public static void SellEditions(String[] args, Pechatnica curPechatnica, Output out) {
         if (args.length == 3) {
             String editionName = args[1];
             int quantity = Integer.parseInt(args[2]);
 
-            curPechatnica.SellCopiesEdition(editionName, quantity);
+            curPechatnica.SellCopiesEdition(editionName, quantity, out);
             return;
         }
 
@@ -136,6 +149,10 @@ public class App {
 
     public static void ListEmployees(Pechatnica curPechatnica) {
         curPechatnica.ShowAllEmployees();
+    }
+
+    public static void ListPrinters(Pechatnica curPechatnica) {
+        curPechatnica.ShowInfoAboutPrinters();
     }
 
     public static void AddEdition(Scanner scanner, Pechatnica curPechatnica) throws Exception {
